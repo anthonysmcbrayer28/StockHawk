@@ -8,7 +8,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
+import android.os.Looper;
+import android.support.annotation.RequiresApi;
+import android.util.Log;
+import android.view.Display;
+import android.widget.Toast;
 
+import com.udacity.stockhawk.R;
 import com.udacity.stockhawk.data.Contract;
 import com.udacity.stockhawk.data.PrefUtils;
 
@@ -20,6 +27,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 import timber.log.Timber;
 import yahoofinance.Stock;
@@ -73,7 +82,18 @@ public final class QuoteSyncJob {
 
 
                 Stock stock = quotes.get(symbol);
+                if (stock == null) {
+                    PrefUtils.removeStock(context, symbol);
+                    PrefUtils.showErrorMessage(context);
+                    continue;
+                }
+
                 StockQuote quote = stock.getQuote();
+                if (quote.getPrice() == null) {
+                    PrefUtils.removeStock(context, symbol);
+                    PrefUtils.showErrorMessage(context);
+                    continue;
+                }
 
                 float price = quote.getPrice().floatValue();
                 float change = quote.getChange().floatValue();
@@ -107,7 +127,7 @@ public final class QuoteSyncJob {
 
             context.getContentResolver()
                     .bulkInsert(
-                            Contract.Quote.URI,
+                            Contract.Quote.uri,
                             quoteCVs.toArray(new ContentValues[quoteCVs.size()]));
 
             Intent dataUpdatedIntent = new Intent(ACTION_DATA_UPDATED);
@@ -118,6 +138,7 @@ public final class QuoteSyncJob {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private static void schedulePeriodic(Context context) {
         Timber.d("Scheduling a periodic task");
 
@@ -136,6 +157,7 @@ public final class QuoteSyncJob {
     }
 
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public static synchronized void initialize(final Context context) {
 
         schedulePeriodic(context);
@@ -143,6 +165,7 @@ public final class QuoteSyncJob {
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public static synchronized void syncImmediately(Context context) {
 
         ConnectivityManager cm =

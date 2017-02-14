@@ -2,7 +2,10 @@ package com.udacity.stockhawk.data;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
+import android.widget.Toast;
 
 import com.udacity.stockhawk.R;
 
@@ -37,12 +40,13 @@ public final class PrefUtils {
 
     }
 
-    private static void editStockPref(Context context, String symbol, Boolean add) {
+    public static void editStockPref(Context context, String symbol, Boolean add) {
         String key = context.getString(R.string.pref_stocks_key);
         Set<String> stocks = getStocks(context);
-
         if (add) {
             stocks.add(symbol);
+
+
         } else {
             stocks.remove(symbol);
         }
@@ -52,6 +56,7 @@ public final class PrefUtils {
         editor.putStringSet(key, stocks);
         editor.apply();
     }
+
 
     public static void addStock(Context context, String symbol) {
         editStockPref(context, symbol, true);
@@ -86,6 +91,16 @@ public final class PrefUtils {
         }
 
         editor.apply();
+    }
+    public static void showErrorMessage(Context context) {
+        final Context c = context;
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+
+            @Override
+            public void run() {
+                Toast.makeText(c, R.string.error_no_stocks, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 }
