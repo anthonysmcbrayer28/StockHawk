@@ -49,7 +49,7 @@ public final class PrefUtils {
             stocks.remove(symbol);
         }
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor editor = prefs.edit();
         editor.remove(key);  //deleting the String Set completely
         editor.apply();
