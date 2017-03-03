@@ -3,6 +3,7 @@ package com.udacity.stockhawk.data;
 
 import android.net.Uri;
 import android.provider.BaseColumns;
+import android.support.v4.media.VolumeProviderCompat;
 
 import com.google.common.collect.ImmutableList;
 

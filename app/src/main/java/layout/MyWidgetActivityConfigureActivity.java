@@ -1,152 +1,94 @@
 package layout;
 
-import android.appwidget.AppWidgetManager;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
-import android.os.Binder;
-import android.util.Log;
+import android.graphics.Color;
+import android.os.Bundle;
 import android.widget.RemoteViews;
-import android.widget.RemoteViewsService;
+import android.widget.RemoteViewsService.RemoteViewsFactory;
 
-import com.udacity.stockhawk.R;
-import com.udacity.stockhawk.data.Contract;
-
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-
-import static android.os.Build.VERSION_CODES.N;
 
 /**
  * The configuration screen for the {@link MyWidgetActivity MyWidgetActivity} AppWidget.
  */
-public class MyWidgetActivityConfigureActivity extends RemoteViewsService {
+@SuppressLint("NewApi")
+public class MyWidgetActivityConfigureActivity implements RemoteViewsFactory {
+    List mCollections = new ArrayList();
 
-    public final static String LOG_TAG = MyWidgetActivity.class.getSimpleName();
+    Context mContext = null;
 
-    private final DecimalFormat dollarFormat;
-    private final DecimalFormat dollarFormatWithPlus;
-
-    public MyWidgetActivityConfigureActivity() {
-        dollarFormat = (DecimalFormat) NumberFormat.getCurrencyInstance(Locale.US);
-        dollarFormatWithPlus = (DecimalFormat) NumberFormat.getCurrencyInstance(Locale.US);
-        dollarFormatWithPlus.setPositivePrefix("+$");
+    public MyWidgetActivityConfigureActivity(Context context, Intent intent) {
+        mContext = context;
     }
 
     @Override
-    public RemoteViewsFactory onGetViewFactory(Intent intent) {
-        return new StockPriceRemoteViewsFactory(this.getApplicationContext(), intent);
+    public int getCount() {
+        return mCollections.size();
     }
 
-    class StockPriceRemoteViewsFactory implements RemoteViewsService.RemoteViewsFactory {
+    @Override
+    public long getItemId(int position) {
+        return position;
+    }
 
+    @Override
+    public RemoteViews getLoadingView() {
+        return null;
+    }
 
-        private List<Stock> stocks;
-        private Context mContext;
-        private int mAppWidgetId;
+    @Override
+    public RemoteViews getViewAt(int position) {
+        RemoteViews mView = new RemoteViews(mContext.getPackageName(),
+                android.R.layout.simple_list_item_1);
+        mView.setTextViewText(android.R.id.text1, (CharSequence) mCollections.get(position));
+        mView.setTextColor(android.R.id.text1, Color.BLACK);
 
-        private Cursor cursor = null;
+        final Intent fillInIntent = new Intent();
+        fillInIntent.setAction(MyWidgetActivity.ACTION_TOAST);
+        final Bundle bundle = new Bundle();
+        bundle.putString(MyWidgetActivity.EXTRA_STRING,
+                (String) mCollections.get(position));
+        fillInIntent.putExtras(bundle);
+        mView.setOnClickFillInIntent(android.R.id.text1, fillInIntent);
+        return mView;
+    }
 
+    @Override
+    public int getViewTypeCount() {
+        return 1;
+    }
 
-        public StockPriceRemoteViewsFactory(Context context, Intent intent) {
-            mContext = context;
-            mAppWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
-                    AppWidgetManager.INVALID_APPWIDGET_ID);
-        }
+    @Override
+    public boolean hasStableIds() {
+        return true;
+    }
 
-        @Override
-        public void onCreate() {
-            stocks = new ArrayList<Stock>();
-        }
+    @Override
+    public void onCreate() {
+        initData();
+    }
 
-        @Override
-        public void onDataSetChanged() {
-            long identity = Binder.clearCallingIdentity();
+    @Override
+    public void onDataSetChanged() {
+        initData();
+    }
 
-            String[] projection = new String[]{
-                    Contract.Quote.COLUMN_SYMBOL,
-                    Contract.Quote.COLUMN_PRICE,
-                    Contract.Quote.COLUMN_ABSOLUTE_CHANGE};
-
-            cursor = getContentResolver().query(Contract.Quote.uri,
-                    projection, null, null, null);
-
-            cursor.moveToPosition(-1);
-
-            try {
-                while (cursor.moveToNext()) {
-                    stocks.add(new Stock(cursor.getString(0),
-                            cursor.getFloat(1),
-                            cursor.getFloat(2)));
-                    Log.d(LOG_TAG, cursor.getString(0) + " " + cursor.getString(1) + " " + cursor.getString(2) + "\n");
-                }
-            } finally {
-                cursor.close();
-            }
-
-            Log.d(LOG_TAG, "cursor length: " + cursor.getCount() + "\n" + "stocks length: " + stocks.size());
-            Binder.restoreCallingIdentity(identity);
-        }
-
-
-        @Override
-        public void onDestroy() {
-            stocks.clear();
-        }
-
-        @Override
-        public int getCount() {
-            return cursor.getCount();
-        }
-
-        @Override
-        public RemoteViews getViewAt(int position) {
-            RemoteViews rv = new RemoteViews(getPackageName(), R.layout.my_widget_activity);
-
-            Log.d("Widgets","Get view at " + position);
-
-            rv.setTextViewText(R.id.widget_stock_list, stocks.get(position).code);
-            rv.setTextViewText(R.id.widget_price, dollarFormat.format(stocks.get(position).price));
-            rv.setTextViewText(R.id.widget_change, dollarFormatWithPlus.format(stocks.get(position).change));
-
-            Log.d(LOG_TAG, stocks.get(position).code + " " + String.valueOf(stocks.get(position).price) + " " + String.valueOf(stocks.get(position).change) + "\n");
-            return rv;
-        }
-
-        @Override
-        public RemoteViews getLoadingView() {
-            return new RemoteViews(getPackageName(), R.layout.my_widget_activity);
-        }
-
-        @Override
-        public int getViewTypeCount() {
-            return 1;
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return 0;
-        }
-
-        @Override
-        public boolean hasStableIds() {
-            return false;
+    private void initData() {
+        mCollections.clear();
+        for (int i = 1; i <= 10; i++) {
+            mCollections.add("ListView item " + i);
         }
     }
 
-    public class Stock {
-        String code;
-        float price, change;
+    @Override
+    public void onDestroy() {
 
-        public Stock(String code, float price, float change) {
-            this.code = code;
-            this.price = price;
-            this.change = change;
-        }
     }
+
 }
+
 
 

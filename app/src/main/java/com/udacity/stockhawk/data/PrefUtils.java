@@ -45,15 +45,15 @@ public final class PrefUtils {
         Set<String> stocks = getStocks(context);
         if (add) {
             stocks.add(symbol);
-
-
         } else {
             stocks.remove(symbol);
         }
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor editor = prefs.edit();
-        editor.putStringSet(key, stocks);
+        editor.remove(key);  //deleting the String Set completely
+        editor.apply();
+        editor.putStringSet(key, stocks); //adding the modified String Set
         editor.apply();
     }
 

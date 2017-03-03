@@ -39,7 +39,7 @@
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <service
-            android:name="layout.MyWidgetActivityConfigureActivity"
+            android:name="layout.WidgetService"
             android:permission="android.permission.BIND_REMOTEVIEWS"/>
 
         <activity
@@ -49,7 +49,7 @@
         <!-- Widget -->
         <receiver
             android:name="layout.MyWidgetActivity"
-            android:label="@string/title_widget_stock_price">
+            >
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

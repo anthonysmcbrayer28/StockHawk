@@ -1,55 +1,71 @@
 package layout;
 
+import android.annotation.SuppressLint;
+import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.widget.RemoteViews;
+import android.widget.Toast;
 
 import com.udacity.stockhawk.R;
-
-/**
- * Implementation of App Widget functionality.
- * App Widget Configuration implemented in {@link MyWidgetActivityConfigureActivity MyWidgetActivityConfigureActivity}
- */
 public class MyWidgetActivity extends AppWidgetProvider {
 
-    public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+    public static final String ACTION_TOAST = "com.dharmangsoni.widgets.ACTION_TOAST";
+    public static final String EXTRA_STRING = "com.dharmangsoni.widgets.EXTRA_STRING";
 
-        // update each of the app widgets with the remote adapter
-        for (int i = 0; i < appWidgetIds.length; ++i) {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if (intent.getAction().equals(ACTION_TOAST)) {
+            String item = intent.getExtras().getString(EXTRA_STRING);
+            Toast.makeText(context, item, Toast.LENGTH_LONG).show();
+        }
+        super.onReceive(context, intent);
+    }
 
-            // Set up the intent that starts the StockPriceWidgetIntentService, which will provide the views for this collection.
-            Intent intent = new Intent(context, MyWidgetActivityConfigureActivity.class);
+    @SuppressLint("NewApi")
+    @Override
+    public void onUpdate(Context context, AppWidgetManager appWidgetManager,
+                         int[] appWidgetIds) {
+        for (int widgetId : appWidgetIds) {
+            RemoteViews mView = initViews(context, appWidgetManager, widgetId);
 
-            // Add the app widget ID to the intent extras.
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetIds[i]);
-            intent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));
+            // Adding collection list item handler
+            final Intent onItemClick = new Intent(context, MyWidgetActivity.class);
+            onItemClick.setAction(ACTION_TOAST);
+            onItemClick.setData(Uri.parse(onItemClick
+                    .toUri(Intent.URI_INTENT_SCHEME)));
+            final PendingIntent onClickPendingIntent = PendingIntent
+                    .getBroadcast(context, 0, onItemClick,
+                            PendingIntent.FLAG_UPDATE_CURRENT);
+            mView.setPendingIntentTemplate(R.id.widgetCollectionList,
+                    onClickPendingIntent);
 
-            // Instantiate the RemoteViews object for the app widget layout.
-            RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.my_widget_activity);
-
-            // Set up the RemoteViews object to use a RemoteViews adapter.
-            // This adapter connects to a RemoteViewsService  through the specified intent.
-            // This is how you populate the data.
-            rv.setRemoteAdapter(appWidgetIds[i], R.id.widget_stock_list, intent);
-
-            // The empty view is displayed when the collection has no items.
-            // It should be in the same layout used to instantiate the RemoteViews object above.
-//            rv.setEmptyView(R.id.stack_view, R.id.empty_view);
-
-            //
-            // Do additional processing specific to this app widget...
-            //
-//            // Create an Intent to launch MainActivity
-//            Intent launchIntent = new Intent(context, MainActivity.class);
-//            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, launchIntent, 0);
-//            rv.setOnClickPendingIntent(R.id.widget_list_view, pendingIntent);
-
-            appWidgetManager.updateAppWidget(appWidgetIds[i], rv);
+            appWidgetManager.updateAppWidget(widgetId, mView);
         }
         super.onUpdate(context, appWidgetManager, appWidgetIds);
+    }
+
+
+
+
+    @SuppressWarnings("deprecation")
+    @SuppressLint("NewApi")
+    private RemoteViews initViews(Context context,
+                                  AppWidgetManager widgetManager, int widgetId) {
+
+        RemoteViews mView = new RemoteViews(context.getPackageName(),
+                R.layout.my_widget_activity);
+
+        Intent intent = new Intent(context, WidgetService.class);
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
+
+        intent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));
+        mView.setRemoteAdapter(widgetId, R.id.widgetCollectionList, intent);
+
+        return mView;
     }
 
 }
